@@ -6,7 +6,9 @@ description = "A scalable 2D rectangle packing tool for efficient space optimiza
 authors = [{ name = "Milky", email = "milkcowmilky@gmail.com" }]
 
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "ortools>=9.14.6206",
+]
 
 readme = "README.md"
 license-files = ["LICENSE"]
