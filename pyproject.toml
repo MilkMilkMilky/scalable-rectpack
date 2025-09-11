@@ -1,0 +1,115 @@
+[project]
+
+name = "scalable-rectpack"
+version = "0.0.1"
+description = "A scalable 2D rectangle packing tool for efficient space optimization."
+authors = [{ name = "Milky", email = "milkcowmilky@gmail.com" }]
+
+requires-python = ">=3.10"
+dependencies = []
+
+readme = "README.md"
+license-files = ["LICENSE"]
+
+classifiers = [
+    "Intended Audience :: Developers",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+[project.urls]
+
+Homepage = "https://MilkMilkMilky.github.io/scalable-rectpack/"
+Repository = "https://github.com/MilkMilkMilky/scalable-rectpack"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# The development dependencies
+[dependency-groups]
+dev = [
+
+    { include-group = "check" },
+    { include-group = "test" },
+    "pre-commit>=2.20.0",
+]
+
+test = ["pytest>=7.2.0"]
+
+check = ["ruff>=0.11.5", "pyright>=1.1.345"]
+
+
+[tool.uv]
+default-groups = ["dev", "test", "check"]
+
+[build-system]
+requires = ["wheel", "setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.pyright]
+include = ["src"]
+pythonVersion = "3.10"
+
+[tool.mypy]
+files = ["src"]
+disallow_untyped_defs = true
+disallow_any_unimported = true
+no_implicit_optional = true
+check_untyped_defs = true
+warn_return_any = true
+warn_unused_ignores = true
+show_error_codes = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--capture sys --verbose"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+fix = true
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "TD",
+    "N",
+    "C",
+    "T",
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D106",
+    "D107",
+    "D401",
+    "A",
+    "ANN",
+    "FIX",
+    "PLR",
+    "FBT",
+    "RET",
+    "EM",
+    "ERA",
+    "BLE",
+    "SLF",
+    "TRY",
+    "G004",
+]
+fixable = ["ALL"]
+unfixable = ["F401"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*.py" = ["S101"]
+
+[tool.ruff.format]
+preview = true
+skip-magic-trailing-comma = false
+docstring-code-format = true
