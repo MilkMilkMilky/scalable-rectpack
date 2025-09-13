@@ -28,16 +28,28 @@ classifiers = [
 Homepage = "https://MilkMilkMilky.github.io/scalable-rectpack/"
 Repository = "https://github.com/MilkMilkMilky/scalable-rectpack"
 
+[project.optional-dependencies]
+visual = [
+    "matplotlib>=3.10.6",
+    "nicegui>=2.24.1",
+]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
 # The development dependencies
 [dependency-groups]
 dev = [
-
+    { include-group = "visual" },
     { include-group = "check" },
     { include-group = "test" },
     "pre-commit>=2.20.0",
+    "rich>=14.1.0",
+]
+
+visual = [
+    "matplotlib>=3.10.6",
+    "nicegui>=2.24.1",
 ]
 
 test = ["pytest>=7.2.0"]
