@@ -2,7 +2,9 @@
 
 ---
 
-A scalable 2D rectangle packing tool for efficient space optimization.
+## Scalable 2D Rectangle Packing
+
+This project presents a robust and flexible solution to the 2D bin packing problem, focusing on efficient space optimization. It leverages advanced constraint programming to pack rectangles of varying sizes into bounded areas, aiming to minimize wasted space. Beyond the powerful core library, `scalable-rectpack` also offers an intuitive web-based application to visualize and interact with packing solutions in real-time.
 
 <div align="center">
 
@@ -18,19 +20,31 @@ A scalable 2D rectangle packing tool for efficient space optimization.
 
 ## Overview
 
-The Scalable 2D Rectangle Packing Tool is a flexible and efficient solution for the 2D bin packing problem, where rectangles of varying sizes need to be placed inside a bounded area with minimal wasted space.
+The Scalable 2D Rectangle Packing Tool is a comprehensive solution for the 2D bin packing problem, combining powerful optimization algorithms with an intuitive web-based visualization interface. This project demonstrates advanced constraint programming techniques to efficiently pack rectangles of varying sizes into bounded areas while minimizing wasted space.
 
-## Features
+### Why `scalable-rectpack`?
 
-- 📏 Scalable & Flexible – Supports rectangles with adjustable dimensions and constraints.
-- ⚡ Optimization-Driven – Minimizes wasted area while ensuring feasible placement.
-- 🧩 General-Purpose – Applicable in layout design, photo walls, cutting stock, game level
-- 📊 Visualization Ready – Integrated plotting functions to visualize packing results.
-- 🔬 Research & Practical Use – Useful both for algorithmic experimentation and real-world
+-   **🚀 High Performance**: Built upon Google OR-Tools CP-SAT solver, our library delivers state-of-the-art optimization capabilities for even the most complex packing scenarios.
+-   **🎨 Interactive Visualization**: Explore solutions with a rich, real-time web interface powered by NiceGUI, making it easy to understand and debug packing strategies.
+-   **⚙️ Flexible Configuration**: Tailor the algorithm to your needs with options for equal or independent dimension shrinking, and choose between per-box or global optimization strategies.
+-   **📊 Real-time Insights**: Monitor the optimization process with live execution logs and performance metrics, giving you clear visibility into how solutions are found.
+-   **🔧 Seamless Integration**: Whether you prefer a programmatic approach with our Python API or interactive exploration via the web interface, `scalable-rectpack` offers versatile tools for researchers, developers, and practitioners alike.
+
+## Core Library Features
+
+Our library is designed to be both scalable and adaptable, offering:
+
+-   📏 **Scalable & Flexible**: Handles rectangles with adjustable dimensions and constraints, adapting to diverse packing requirements.
+-   ⚡ **Optimization-Driven**: Focuses on minimizing wasted area while guaranteeing feasible placement within containers.
+-   🧩 **General-Purpose**: Applicable across various domains, including layout design, photo walls, cutting stock, and game level design.
+-   🎯 **Dual-Phase Optimization**: Employs a unique two-phase approach: first minimizing the number of boxes, then optimizing item shrinkage for maximum efficiency.
+-   🔧 **Configurable Parameters**: Offers fine-grained control over algorithm behavior, including time limits, equal shrink options, and per-box optimization.
+-   📈 **Performance Monitoring**: Provides detailed execution logs and optimization status tracking for deep insights into the solving process.
 
 ## Installation
 
-To install the project, run the following command:
+### Core Package
+To install the core package, run the following command:
 
 ```bash
 python -m pip install git+https://github.com/MilkMilkMilky/scalable-rectpack.git
@@ -43,6 +57,71 @@ git clone https://github.com/MilkMilkMilky/scalable-rectpack.git
 cd scalable-rectpack
 python -m pip install .
 ```
+
+### Web Application (Optional)
+To install with web visualization capabilities:
+
+```bash
+python -m pip install "scalable-rectpack[visual]"
+```
+
+Or from local with visual dependencies:
+
+```bash
+git clone https://github.com/MilkMilkMilky/scalable-rectpack.git
+cd scalable-rectpack
+python -m pip install ".[visual]"
+```
+
+## Getting Started
+
+### Option 1: Python API (For Developers)
+
+The `scalable-rectpack` library provides a powerful Python API for integrating 2D rectangle packing optimization into your projects.
+
+1.  **Install the core package:**
+    ```bash
+    python -m pip install scalable-rectpack
+    ```
+
+2.  **Run a basic example:**
+    ```python
+    from scalable_rectpack._core import Item, solve_scalable_rectpack
+
+    # Define items to be packed
+    items = [Item(id=1, width=120, height=80, width_min=100, height_min=60)]
+    
+    # Define the container (box) size
+    box_width, box_height = 200, 150
+
+    # Solve the packing problem
+    result = solve_scalable_rectpack(items, box_width=box_width, box_height=box_height)
+
+    if result.success:
+        print(f"Packing successful! Boxes used: {result.num_boxes_used}")
+        for box_res in result.packing_results:
+            if box_res.packed_items:
+                for p in box_res.packed_items:
+                    print(f"  Item {p.id} packed at ({p.x},{p.y}) with size {p.width}x{p.height}")
+    else:
+        print(f"Packing failed: {result.message}")
+    ```
+
+### Option 2: Web Application (For Interactive Exploration)
+
+For a hands-on, interactive experience, you can use the bundled web application demo. This is ideal for quickly visualizing packing solutions and experimenting with different parameters without writing code.
+
+1.  **Install with visualization support:**
+    ```bash
+    python -m pip install "scalable-rectpack[visual]"
+    ```
+
+2.  **Launch the web application:**
+    ```bash
+    rectpack-visual
+    ```
+
+3.  **Open your browser** and navigate to `http://localhost:8080` to start exploring.
 
 ## Usage
 
@@ -186,6 +265,50 @@ result = solve_scalable_rectpack(
 - If some items’ minimum size exceeds the box size, the solver raises `ValueError`.
 - For large instances, consider increasing `time_limit`.
 - For speed in most cases, prefer `equal_shrink=True` and `per_box=True`.
+
+## Web Application Demo
+
+The `scalable-rectpack` project includes an interactive web application that serves as a powerful demo and exploration tool for the core library's capabilities. Built with [NiceGUI](https://nicegui.io/), this demo provides a real-time visualization of rectangle packing solutions, allowing you to easily experiment with different settings and immediately see the results.
+
+### Why use the Web Application?
+
+-   **Visual Insight**: See how rectangles are packed into boxes in an intuitive graphical interface.
+-   **Interactive Experimentation**: Adjust box dimensions, add/remove items, and fine-tune algorithm parameters on the fly.
+-   **Real-time Feedback**: Observe optimization progress and detailed logs as the solver works.
+-   **User-Friendly**: No coding required to get started – simply launch and explore.
+
+### Key Features of the Web Interface
+
+The web application is divided into two main panels to give you full control and visibility:
+
+#### **Left Panel - Configuration & Controls**
+
+This panel allows you to define your packing problem:
+
+-   **📋 Examples**: Quickly load predefined scenarios to understand various packing challenges.
+-   **📦 Box Settings**: Easily set the width and height of your packing containers.
+-   **📏 Item Management**: Dynamically add, remove, and modify the dimensions (width, height, minimum width, minimum height) of individual items.
+-   **⚙️ Algorithm Settings**: Adjust core solver parameters:
+    -   `Time Limit`: Control the maximum time the optimizer spends searching for a solution.
+    -   `Equal Shrink`: Toggle whether items must shrink proportionally (maintaining aspect ratio).
+    -   `Per Box Optimization`: Decide if the shrinking phase should optimize per box or globally.
+
+#### **Right Panel - Live Results & Visualization**
+
+This panel displays the outcome of your packing problem:
+
+-   **📊 Interactive 2D Visualization**: A dynamic plot shows the arrangement of packed rectangles within the boxes. Each item is color-coded and labeled for clear identification. Supports multi-box layouts with easy tab navigation.
+-   **📝 Detailed Execution Logs**: Get a comprehensive summary of the optimization process, including:
+    -   Success status and outcome (e.g., Optimal, Feasible).
+    -   Messages from the solver.
+    -   Time taken for each optimization phase.
+    -   Total shrink achieved and the settings used.
+
+### Web Application Screenshot
+
+![Web Application Interface](assets/web-app-screenshot.png)
+
+*A glimpse of the web interface, demonstrating a successful packing solution with multiple items in a 200x150 box. The interactive controls on the left allow for real-time adjustments, while the right panel displays the visual result and detailed logs.*
 
 ## License
 
