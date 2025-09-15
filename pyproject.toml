@@ -29,10 +29,10 @@ Homepage = "https://MilkMilkMilky.github.io/scalable-rectpack/"
 Repository = "https://github.com/MilkMilkMilky/scalable-rectpack"
 
 [project.optional-dependencies]
-visual = [
-    "matplotlib>=3.10.6",
-    "nicegui>=2.24.1",
-]
+visual = ["matplotlib>=3.10.6", "nicegui>=2.24.1"]
+
+[project.scripts]
+rectpack-visual = "scalable_rectpack_visual.main:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -47,10 +47,7 @@ dev = [
     "rich>=14.1.0",
 ]
 
-visual = [
-    "matplotlib>=3.10.6",
-    "nicegui>=2.24.1",
-]
+visual = ["matplotlib>=3.10.6", "nicegui>=2.24.1"]
 
 test = ["pytest>=7.2.0"]
 
