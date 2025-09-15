@@ -14,6 +14,8 @@ This project presents a robust and flexible solution to the 2D bin packing probl
 
 </div>
 
+![Overview](assets/overview.jpg)
+
 <div align="center">
     <a href="https://github.com/MilkMilkMilky/scalable-rectpack">Github</a>
 </div>
