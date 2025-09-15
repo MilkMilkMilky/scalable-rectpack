@@ -214,41 +214,57 @@ def _add_item_variables(
     return {"box_id": box_id, "x": x, "y": y, "w": w, "h": h}
 
 
-def _add_non_overlap_constraints(model: cp_model.CpModel, item_vars: list[dict]) -> None:
+def _add_non_overlap_constraints(
+    model: cp_model.CpModel,
+    item_vars: list[dict],
+    num_boxes: int,
+) -> None:
     """Add non-overlapping constraints between items."""
     n = len(item_vars)
+    presence: list[list] = []
+    for i in range(n):
+        box_i = item_vars[i]["box_id"]
+        row: list = []
+        for k in range(num_boxes):
+            p = model.NewBoolVar(f"p_{i}_{k}")
+            model.Add(box_i == k).OnlyEnforceIf(p)
+            model.Add(box_i != k).OnlyEnforceIf(p.Not())
+            row.append(p)
+        model.Add(sum(row) == 1)
+        presence.append(row)
+
     for i in range(n):
         for j in range(i + 1, n):
-            xi, yi, wi, hi, box_i = (
+            xi, yi, wi, hi = (
                 item_vars[i]["x"],
                 item_vars[i]["y"],
                 item_vars[i]["w"],
                 item_vars[i]["h"],
-                item_vars[i]["box_id"],
             )
-            xj, yj, wj, hj, box_j = (
+            xj, yj, wj, hj = (
                 item_vars[j]["x"],
                 item_vars[j]["y"],
                 item_vars[j]["w"],
                 item_vars[j]["h"],
-                item_vars[j]["box_id"],
             )
 
-            b_left = model.NewBoolVar(f"b_left_{i}_{j}")
-            b_right = model.NewBoolVar(f"b_right_{i}_{j}")
-            b_above = model.NewBoolVar(f"b_above_{i}_{j}")
-            b_below = model.NewBoolVar(f"b_below_{i}_{j}")
-            b_diff_box = model.NewBoolVar(f"diff_box_{i}_{j}")
+            for k in range(num_boxes):
+                both = model.NewBoolVar(f"both_{i}_{j}_{k}")
+                model.Add(both <= presence[i][k])
+                model.Add(both <= presence[j][k])
+                model.Add(both >= presence[i][k] + presence[j][k] - 1)
 
-            model.Add(box_i != box_j).OnlyEnforceIf(b_diff_box)
-            model.Add(box_i == box_j).OnlyEnforceIf(b_diff_box.Not())
+                b_left = model.NewBoolVar(f"b_left_{i}_{j}_{k}")
+                b_right = model.NewBoolVar(f"b_right_{i}_{j}_{k}")
+                b_above = model.NewBoolVar(f"b_above_{i}_{j}_{k}")
+                b_below = model.NewBoolVar(f"b_below_{i}_{j}_{k}")
 
-            model.Add(xi + wi <= xj).OnlyEnforceIf(b_left)
-            model.Add(xj + wj <= xi).OnlyEnforceIf(b_right)
-            model.Add(yi + hi <= yj).OnlyEnforceIf(b_below)
-            model.Add(yj + hj <= yi).OnlyEnforceIf(b_above)
+                model.Add(xi + wi <= xj).OnlyEnforceIf([both, b_left])
+                model.Add(xj + wj <= xi).OnlyEnforceIf([both, b_right])
+                model.Add(yi + hi <= yj).OnlyEnforceIf([both, b_below])
+                model.Add(yj + hj <= yi).OnlyEnforceIf([both, b_above])
 
-            model.AddBoolOr([b_left, b_right, b_above, b_below, b_diff_box])
+                model.AddBoolOr([b_left, b_right, b_above, b_below, both.Not()])
 
 
 def _add_objective_min_boxes(model: cp_model.CpModel, item_vars: list[dict]) -> cp_model.IntVar:
@@ -278,7 +294,8 @@ def _solve_model(
     """Solve the packing problem for given items and box template."""
     model = _create_model()
     item_vars = [_add_item_variables(model, item, max_boxes, box_template, equal_shrink) for item in items]
-    _add_non_overlap_constraints(model, item_vars)
+
+    _add_non_overlap_constraints(model, item_vars, max_boxes)
 
     # Only add shrink objective if items are actually shrinkable
     total_initial_area = sum(item.width * item.height for item in items)
@@ -461,7 +478,7 @@ def solve_scalable_rectpack(
     # Step 1: Model1 - minimize number of boxes
     model1 = _create_model()
     item_vars1 = [_add_item_variables(model1, item, max_boxes, box_template, equal_shrink) for item in items]
-    _add_non_overlap_constraints(model1, item_vars1)
+    _add_non_overlap_constraints(model1, item_vars1, max_boxes)
     max_box_id = _add_objective_min_boxes(model1, item_vars1)
 
     solver1 = cp_model.CpSolver()
@@ -516,13 +533,19 @@ def solve_scalable_rectpack(
             outcome_box_solve = (
                 PackingOutcome.OPTIMAL
                 if status_box_solve == cp_model.OPTIMAL
-                else PackingOutcome.FEASIBLE
-                if status_box_solve == cp_model.FEASIBLE
-                else PackingOutcome.NO_SOLUTION_INFEASIBLE
-                if status_box_solve == cp_model.INFEASIBLE
-                else PackingOutcome.NO_SOLUTION_TIMEOUT
-                if status_box_solve == cp_model.UNKNOWN
-                else PackingOutcome.NO_SOLUTION_UNKNOWN
+                else (
+                    PackingOutcome.FEASIBLE
+                    if status_box_solve == cp_model.FEASIBLE
+                    else (
+                        PackingOutcome.NO_SOLUTION_INFEASIBLE
+                        if status_box_solve == cp_model.INFEASIBLE
+                        else (
+                            PackingOutcome.NO_SOLUTION_TIMEOUT
+                            if status_box_solve == cp_model.UNKNOWN
+                            else PackingOutcome.NO_SOLUTION_UNKNOWN
+                        )
+                    )
+                )
             )  # Fallback for other UNKNOWN cases
 
             if packed_box is None:
@@ -599,13 +622,19 @@ def solve_scalable_rectpack(
         outcome_global_solve = (
             PackingOutcome.OPTIMAL
             if status_global_solve == cp_model.OPTIMAL
-            else PackingOutcome.FEASIBLE
-            if status_global_solve == cp_model.FEASIBLE
-            else PackingOutcome.NO_SOLUTION_INFEASIBLE
-            if status_global_solve == cp_model.INFEASIBLE
-            else PackingOutcome.NO_SOLUTION_TIMEOUT
-            if status_global_solve == cp_model.UNKNOWN
-            else PackingOutcome.NO_SOLUTION_UNKNOWN
+            else (
+                PackingOutcome.FEASIBLE
+                if status_global_solve == cp_model.FEASIBLE
+                else (
+                    PackingOutcome.NO_SOLUTION_INFEASIBLE
+                    if status_global_solve == cp_model.INFEASIBLE
+                    else (
+                        PackingOutcome.NO_SOLUTION_TIMEOUT
+                        if status_global_solve == cp_model.UNKNOWN
+                        else PackingOutcome.NO_SOLUTION_UNKNOWN
+                    )
+                )
+            )
         )  # Fallback for other UNKNOWN cases
 
         if packed_global is None:
@@ -632,17 +661,29 @@ def solve_scalable_rectpack(
                 packing_results=packing_results_per_mode,
             )
         else:
-            packing_results_per_mode.append(
-                PerBoxPackingResult(
-                    box_id=None,
-                    packed_items=packed_global,
-                    total_shrink=total_shrink_global,
-                    status=status_global_solve,
-                    solve_time=solve_time_global,
-                    outcome=outcome_global_solve,
-                    message="Global shrink optimization successful.",
-                ),
-            )
+            box_to_packed: dict[int, list[PackedItem]] = {}
+            for p in packed_global:
+                box_to_packed.setdefault(p.box_id, []).append(p)
+            for b in range(min_boxes):
+                items_in_b = box_to_packed.get(b, [])
+                per_box_shrink = None
+                if items_in_b:
+                    per_box_shrink = sum(
+                        (next(it.width for it in items if it.id == pi.id) - pi.width)
+                        + (next(it.height for it in items if it.id == pi.id) - pi.height)
+                        for pi in items_in_b
+                    )
+                packing_results_per_mode.append(
+                    PerBoxPackingResult(
+                        box_id=b,
+                        packed_items=items_in_b,
+                        total_shrink=per_box_shrink,
+                        status=status_global_solve,
+                        solve_time=solve_time_global,
+                        outcome=outcome_global_solve,
+                        message=f"Global shrink optimization: box {b} layout.",
+                    ),
+                )
             return PackingResult(
                 success=True,
                 message=f"Packing successful with {min_boxes} boxes. Total shrink: {total_shrink_global}",
