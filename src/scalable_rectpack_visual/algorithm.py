@@ -24,33 +24,21 @@ class RectPacker:
         )
 
     @staticmethod
-    def validate_box_width(box_width: int):
-        if not isinstance(box_width, int):
-            raise ValueError("Box width must be an integer")
-        if box_width <= 0:
-            raise ValueError("Box width must be greater than 0")
+    def validate_ge0_int(name: str, value: int):
+        if isinstance(value, int):
+            value_int = value
+        else:
+            try:
+                value_int = int(value)
+            except Exception:
+                return f"{name} must be an integer"
 
-    @staticmethod
-    def validate_box_height(box_height: int):
-        if not isinstance(box_height, int):
-            raise ValueError("Box height must be an integer")
-        if box_height <= 0:
-            raise ValueError("Box height must be greater than 0")
+            if value_int - value > 1e-6:
+                return f"{name} must be an integer"
 
-    @staticmethod
-    def validate_items(items: list[Item]):
-        if not items:
-            raise ValueError("Items must be a non-empty list")
-        for item in items:
-            if not isinstance(item, Item):
-                raise ValueError("Items must be a list of Item objects")
-            if item.width <= 0 or item.height <= 0 or item.width_min <= 0 or item.height_min <= 0:
-                raise ValueError("Item dimensions must be greater than 0")
-
-    @staticmethod
-    def validate_time_limit(time_limit: int):
-        if time_limit <= 0:
-            raise ValueError("Time limit must be greater than 0")
+        if value_int <= 0:
+            return f"{name} must be greater than 0"
+        return None
 
     def append_item(self, item: Item):
         self.items.append(item)
